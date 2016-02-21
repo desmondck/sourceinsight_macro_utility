@@ -175,14 +175,8 @@ macro _wcjHandleNewFile(key)
 }
 
 /**************************************ufp type related***********************************************/
-/*快捷内容插入*/
-macro _wcjHandleUfpType(key)
+macro _wcjInsertCursorText(data)
 {
-	/*key = Ask("Enter ufp type short key");*/
-	ufptype = _wcjGetUfpType(key)
-	if (ufptype == "")
-		return false;
-	
 	/* 获得指定行文本 */
 	hbuf = GetCurrentBuf()
 	ln = GetBufLnCur(hbuf)
@@ -197,12 +191,22 @@ macro _wcjHandleUfpType(key)
 	DelBufLine(hbuf, ln)
 	before = strtrunc(text, column)
 	after  = strmid(text, column, strlen(text))
-	newtext = "@before@@ufptype@@after@"	
+	newtext = "@before@@data@@after@"	
 	InsBufLine(hbuf, ln, newtext)
 
 	/* 设置光标正确的位置 */
-	pos = column + strlen(ufptype)
-	SetBufIns(hbuf, ln, pos)
+	pos = column + strlen(data)
+	SetBufIns(hbuf, ln, pos)	
+}
+/*快捷内容插入*/
+macro _wcjHandleUfpType(key)
+{
+	/*key = Ask("Enter ufp type short key");*/
+	ufptype = _wcjGetUfpType(key)
+	if (ufptype == "")
+		return false;
+	
+	_wcjInsertCursorText(ufptype);
 
 	return true;
 }
@@ -330,6 +334,28 @@ macro _wcjAddInclude()
 	return true
 }
 
+macro _wcjHandleVar()
+{
+	key = Ask("Enter variable name:")
+	if (key == "")
+		return true
+	 
+	hbuf = GetCurrentBuf()
+
+	text = ""
+	if (strtrunc(key, 1) == "i")				text = "UFP_INT32 @key@"
+	if (strtrunc(key, 2) == "ui")				text = "UFP_UINT32 @key@"
+	if (strtrunc(key, 3) == "ull")				text = "UFP_UINT64 @key@"
+	if (strtrunc(key, 2) == "uv")				text = "UFP_UINTPTR @key@"
+	if (strtrunc(key, 1) == "v")				text = "UFP_VOID @key@"
+	if (strtrunc(key, 2) == "vp")				text = "UFP_PHYS_ADDR @key@"
+	if (strtrunc(key, 1) == "n")				text = "UFP_NULL_PTR @key@"
+	
+	_wcjInsertCursorText(text)
+
+	return true	
+}
+
 /**************************************罗列所有快捷键***********************************************/
 macro _wcjHandleWindows(key)  
 {  
@@ -397,6 +423,8 @@ macro wcjMain()
 	if (_wcjHandleComment(key))			return ""
 	/*窗体相关*/
 	if (_wcjHandleWindows(key))			return ""
+	/*变量*/
+	if (key == "var")					return _wcjHandleVar()
 	
 	return _wcjHandleOther(key)
 }
